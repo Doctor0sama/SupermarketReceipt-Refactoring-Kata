@@ -1,11 +1,10 @@
-
+from model_objects import ProductQuantity, Discount
 class ReceiptItem:
-    def __init__(self, product, quantity, price, total_price):
-        self.product = product
-        self.quantity = quantity
+    def __init__(self, product_quantity: ProductQuantity, price: float):
+        self.product = product_quantity.product
+        self.quantity = product_quantity.quantity
         self.price = price
-        self.total_price = total_price
-
+        self.total_price = self.price * self.quantity
 
 class Receipt:
     def __init__(self):
@@ -13,17 +12,14 @@ class Receipt:
         self._discounts = []
 
     def total_price(self):
-        total = 0
-        for item in self.items:
-            total += item.total_price
-        for discount in self.discounts:
-            total += discount.discount_amount
+        total = sum(item.total_price for item in self._items)
+        total -= sum(discount.discount_amount for discount in self._discounts)
         return total
 
-    def add_product(self, product, quantity, price, total_price):
-        self._items.append(ReceiptItem(product, quantity, price, total_price))
+    def add_product(self, product_quantity: ProductQuantity, price: float):
+        self._items.append(ReceiptItem(product_quantity, price))
 
-    def add_discount(self, discount):
+    def add_discount(self, discount: Discount):
         self._discounts.append(discount)
 
     @property

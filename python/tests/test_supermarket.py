@@ -8,6 +8,7 @@ from tests.fake_catalog import FakeCatalog
 
 def test_ten_percent_discount():
     catalog = FakeCatalog()
+
     toothbrush = Product("toothbrush", ProductUnit.EACH)
     catalog.add_product(toothbrush, 0.99)
 
@@ -19,14 +20,33 @@ def test_ten_percent_discount():
 
     cart = ShoppingCart()
     cart.add_item_quantity(apples, 2.5)
+    cart.add_item_quantity(toothbrush, 1)
 
     receipt = teller.checks_out_articles_from(cart)
+    
+    #Expected variables
+    expected_toothbrush_price = 0.99
+    expected_toothbrush_discount = expected_toothbrush_price * 0.1
+    expected_toothbrush_discounted_price = expected_toothbrush_price - expected_toothbrush_discount
 
-    assert 4.975 == pytest.approx(receipt.total_price(), 0.01)
-    assert [] == receipt.discounts
-    assert 1 == len(receipt.items)
+    expected_apples_price = 2.5 * 1.99
+
+    expected_total_price = expected_toothbrush_discounted_price + expected_apples_price
+
+    #Assertations
+
+    assert pytest.approx(expected_total_price, 0.01) == receipt.total_price()
+
+    assert len(receipt.discounts) == 1
+    discount = receipt.discounts[0]
+    assert discount.product == toothbrush
+    assert discount.description == SpecialOfferType.TEN_PERCENT_DISCOUNT.name
+    assert discount.discount_amount == pytest.approx(expected_toothbrush_discount, 0.1)
+
+    assert len(receipt.items) == 2
+
     receipt_item = receipt.items[0]
-    assert apples == receipt_item.product
-    assert 1.99 == receipt_item.price
-    assert 2.5 * 1.99 == pytest.approx(receipt_item.total_price, 0.01)
-    assert 2.5 == receipt_item.quantity
+    assert receipt_item.product == apples
+    assert receipt_item.quantity == 2.5
+    assert receipt_item.price == 1.99
+    assert receipt_item.total_price == expected_apples_price
